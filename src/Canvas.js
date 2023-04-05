@@ -11,10 +11,10 @@ import {
   RegularPolygon,
   Wedge,
 } from "react-konva";
-import { circleColors, mockLineData } from "./utils";
+import { circleColors, lineColors, mockLineData } from "./utils";
+import Select from "react-select";
 
 const Canvas = () => {
-  const [lines, setLines] = useState([]);
   const [shapes, setShapes] = useState([]);
   const [tool, setTool] = useState("");
   const [undoHistory, setUndoHistory] = useState([]);
@@ -22,6 +22,8 @@ const Canvas = () => {
   const [currentLine, setCurrentLine] = useState([]);
   const stageRef = useRef(null);
   const shapeRef = useRef(null);
+  const [lineColor,setLineColor]=useState("black");
+
 
   useEffect(() => {
     const stage = stageRef.current.getStage();
@@ -36,20 +38,22 @@ const Canvas = () => {
     switch (tool) {
       case "dashed":
         return {
-          stroke: "black",
+          stroke: lineColor,
           strokeWidth: 2,
           dash: [10, 5],
           lineCap: "round",
+          isLine: true
         };
       case "dotted":
         return {
-          stroke: "blue",
+          stroke: lineColor,
           strokeWidth: 2,
-          dash: [2, 2],
+          dash: [3,3],
           lineCap: "round",
+          isLine: true
         };
       default:
-        return { stroke: "red", strokeWidth: 2, lineCap: "round" };
+        return { stroke: lineColor, strokeWidth: 2, lineCap: "round",isLine: true };
     }
   };
 
@@ -73,10 +77,10 @@ const Canvas = () => {
   const handleMouseUp = () => {
     if (tool) {
       setDrawing(false);
-      setLines((lines) => [
-        ...lines,
-        { points: currentLine, style: { ...getStyle() } },
-      ]);
+      setShapes((shapes)=>[
+        ...shapes,
+        { points: currentLine, style: { ...getStyle() }},
+      ])
       setCurrentLine([]);
     }
   };
@@ -86,24 +90,24 @@ const Canvas = () => {
       case "rectangle":
         setShapes([
           ...shapes,
-          { type: "rectangle", x: 50, y: 50, width: 50, height: 50 },
+          { type: "rectangle", x: 50, y: 50, width: 50, height: 50, isShape: true },
         ]);
         setUndoHistory([...undoHistory, [...shapes]]);
         break;
       case "circle":
         setShapes([
           ...shapes,
-          { type: "circle", x: 50, y: 50, radius: 25, fill: shapeColor },
+          { type: "circle", x: 50, y: 50, radius: 25, fill: shapeColor,isShape: true },
         ]);
         setUndoHistory([...undoHistory, [...shapes]]);
         break;
       case "triangle":
-        setShapes([...shapes, { type: "triangle", x: 50, y: 50, radius: 40 }]);
+        setShapes([...shapes, { type: "triangle", x: 50, y: 50, radius: 40,isShape: true }]);
         setUndoHistory([...undoHistory, [...shapes]]);
         break;
       default:
         break;
-    }
+    }   
   };
 
   const handleShapeDragEnd = (e) => {
@@ -131,6 +135,69 @@ const Canvas = () => {
   const handleDottedLine = () => {
     setTool("dotted");
   };
+
+  const renderShapes=(shape,i)=>{
+    switch (shape.type) {
+      case "rectangle":
+        return (
+          <Rect
+            key={i}
+            x={shape.x}
+            y={shape.y}
+            width={shape.width}
+            height={shape.height}
+            fill="white"
+            stroke="black"
+            strokeWidth={1}
+            draggable={true}
+            ref={shapeRef}
+            onDragEnd={handleShapeDragEnd}
+            onClick={() => setTool("")}
+            style={{
+              cursor: "pointer"
+            }}
+          />
+        );
+      case "circle":
+        return (
+          <Circle
+            key={i}
+            x={shape.x}
+            y={shape.y}
+            radius={shape.radius}
+            fill={shape.fill}
+            stroke="black"
+            strokeWidth={1}
+            draggable={true}
+            ref={shapeRef}
+            onDragEnd={handleShapeDragEnd}
+            onClick={() => setTool("")}
+          />
+        );
+      case "triangle":
+        return (
+          <RegularPolygon
+            key={i}
+            x={shape.x}
+            y={shape.y}
+            sides={3}
+            fill="white"
+            stroke="black"
+            strokeWidth={1}
+            radius={35}
+            draggable={true}
+            ref={shapeRef}
+            onDragEnd={handleShapeDragEnd}
+            onClick={() => setTool("")}
+          />
+        );
+
+      default:
+        return null;
+    }
+  }
+
+
 
   return (
     <div>
@@ -171,28 +238,31 @@ const Canvas = () => {
         <button onClick={handleDashedLine}>Dashed Line</button>
         <button onClick={handleDottedLine}>Dotted Line</button>
         <button onClick={handleUndo}>Undo</button>
+        <label>Line Color</label>
+        <Select options={lineColors} onChange={(e)=>setLineColor(e.value)}/>
       </div>
       <Stage
-        height={window.innerHeight}
+        height={window.innerHeight*10}
         width={window.innerWidth}
         ref={stageRef}
         style={{
           border: "1px solid",
+          overflowY: "scroll"
         }}
         onMouseDown={handleMouseDown}
         onMousemove={handleMouseMove}
-        onMouseup={handleMouseUp}
+        onMouseup={handleMouseUp}  
       >
         <Layer>
-          {lines.map((line, i) => (
-            <Line
+          {shapes.map((line, i) => (
+           line?.style?.isLine ? <Line
               key={i}
               points={line.points}
               stroke={line.style.stroke}
               strokeWidth={line.style.strokeWidth}
               dash={line.style.dash}
               lineCap={line.style.lineCap}
-            />
+            /> : null
           ))}
           {currentLine.length > 0 && (
             <Line
@@ -204,64 +274,7 @@ const Canvas = () => {
             />
           )}
           {shapes.map((shape, i) => {
-            switch (shape.type) {
-              case "rectangle":
-                return (
-                  <Rect
-                    key={i}
-                    x={shape.x}
-                    y={shape.y}
-                    width={shape.width}
-                    height={shape.height}
-                    fill="white"
-                    stroke="black"
-                    strokeWidth={1}
-                    draggable={true}
-                    ref={shapeRef}
-                    onDragEnd={handleShapeDragEnd}
-                    onClick={() => setTool("")}
-                    style={{
-                      cursor: "pointer"
-                    }}
-                  />
-                );
-              case "circle":
-                return (
-                  <Circle
-                    key={i}
-                    x={shape.x}
-                    y={shape.y}
-                    radius={shape.radius}
-                    fill={shape.fill}
-                    stroke="black"
-                    strokeWidth={1}
-                    draggable={true}
-                    ref={shapeRef}
-                    onDragEnd={handleShapeDragEnd}
-                    onClick={() => setTool("")}
-                  />
-                );
-              case "triangle":
-                return (
-                  <RegularPolygon
-                    key={i}
-                    x={shape.x}
-                    y={shape.y}
-                    sides={3}
-                    fill="white"
-                    stroke="black"
-                    strokeWidth={1}
-                    radius={35}
-                    draggable={true}
-                    ref={shapeRef}
-                    onDragEnd={handleShapeDragEnd}
-                    onClick={() => setTool("")}
-                  />
-                );
-
-              default:
-                return null;
-            }
+           return (shape?.isShape ? renderShapes(shape,i) : null);
           })}
         </Layer>
       </Stage>

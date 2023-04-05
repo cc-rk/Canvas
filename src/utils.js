@@ -73,6 +73,49 @@ export const circleColors = [
     "#B34D4D"
   ];
 
+export const lineColors=[
+    {
+        value: "#FF6633",
+        label: "#FF6633"
+    },
+    {
+        value: "#FFB399",
+        label: "#FFB399"
+    },
+    {
+        value: "#FF33FF",
+        label: "#FF33FF"
+    },
+    {
+        value: "#FFFF99",
+        label: "#FFFF99"
+    },
+    {
+        value: "#00B3E6",
+        label: "#00B3E6"
+    },
+    {
+        value: "#E6B333",
+        label: "#E6B333"
+    },
+    {
+        value: "#3366E6",
+        label: "#3366E6"
+    },
+    {
+        value: "#999966",
+        label: "#999966"
+    },
+    {
+        value: "#99FF99",
+        label: "#99FF99"
+    },
+    {
+        value: "#B34D4D",
+        label: "#B34D4D"
+    }
+]
+
 export const mockLineData=[
     {
         "points": [
