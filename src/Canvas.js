@@ -5,25 +5,20 @@ import {
   Line,
   Rect,
   Circle,
-  Text,
-  Image,
-  Transformer,
   RegularPolygon,
-  Wedge,
 } from "react-konva";
 import { circleColors, lineColors, mockLineData } from "./utils";
 import Select from "react-select";
 
 const Canvas = () => {
   const [shapes, setShapes] = useState([]);
-  const [tool, setTool] = useState("");
+  const [tool, setTool] = useState("");  
   const [undoHistory, setUndoHistory] = useState([]);
   const [drawing, setDrawing] = useState(false);
   const [currentLine, setCurrentLine] = useState([]);
   const stageRef = useRef(null);
   const shapeRef = useRef(null);
-  const [lineColor,setLineColor]=useState("black");
-
+  const [lineColor, setLineColor] = useState("black");
 
   useEffect(() => {
     const stage = stageRef.current.getStage();
@@ -42,18 +37,23 @@ const Canvas = () => {
           strokeWidth: 2,
           dash: [10, 5],
           lineCap: "round",
-          isLine: true
+          isLine: true,
         };
       case "dotted":
         return {
           stroke: lineColor,
           strokeWidth: 2,
-          dash: [3,3],
+          dash: [3, 3],
           lineCap: "round",
-          isLine: true
+          isLine: true,
         };
       default:
-        return { stroke: lineColor, strokeWidth: 2, lineCap: "round",isLine: true };
+        return {
+          stroke: lineColor,
+          strokeWidth: 2,
+          lineCap: "round",
+          isLine: true,
+        };
     }
   };
 
@@ -65,7 +65,7 @@ const Canvas = () => {
   };
 
   const handleMouseMove = (e) => {
-    if(tool){
+    if (tool) {
       if (!drawing) {
         return;
       }
@@ -77,10 +77,10 @@ const Canvas = () => {
   const handleMouseUp = () => {
     if (tool) {
       setDrawing(false);
-      setShapes((shapes)=>[
+      setShapes((shapes) => [
         ...shapes,
-        { points: currentLine, style: { ...getStyle() }},
-      ])
+        { points: currentLine, style: { ...getStyle() } },
+      ]);
       setCurrentLine([]);
     }
   };
@@ -90,24 +90,41 @@ const Canvas = () => {
       case "rectangle":
         setShapes([
           ...shapes,
-          { type: "rectangle", x: 50, y: 50, width: 50, height: 50, isShape: true },
+          {
+            type: "rectangle",
+            x: 50,
+            y: 50,
+            width: 50,
+            height: 50,
+            isShape: true,
+          },
         ]);
         setUndoHistory([...undoHistory, [...shapes]]);
         break;
       case "circle":
         setShapes([
           ...shapes,
-          { type: "circle", x: 50, y: 50, radius: 25, fill: shapeColor,isShape: true },
+          {
+            type: "circle",
+            x: 50,
+            y: 50,
+            radius: 25,
+            fill: shapeColor,
+            isShape: true,
+          },
         ]);
         setUndoHistory([...undoHistory, [...shapes]]);
         break;
       case "triangle":
-        setShapes([...shapes, { type: "triangle", x: 50, y: 50, radius: 40,isShape: true }]);
+        setShapes([
+          ...shapes,
+          { type: "triangle", x: 50, y: 50, radius: 40, isShape: true },
+        ]);
         setUndoHistory([...undoHistory, [...shapes]]);
         break;
       default:
         break;
-    }   
+    }
   };
 
   const handleShapeDragEnd = (e) => {
@@ -136,7 +153,7 @@ const Canvas = () => {
     setTool("dotted");
   };
 
-  const renderShapes=(shape,i)=>{
+  const renderShapes = (shape, i) => {
     switch (shape.type) {
       case "rectangle":
         return (
@@ -154,8 +171,9 @@ const Canvas = () => {
             onDragEnd={handleShapeDragEnd}
             onClick={() => setTool("")}
             style={{
-              cursor: "pointer"
+              cursor: "pointer",
             }}
+            dragBoundFunc={dragBoundFunc}
           />
         );
       case "circle":
@@ -172,6 +190,7 @@ const Canvas = () => {
             ref={shapeRef}
             onDragEnd={handleShapeDragEnd}
             onClick={() => setTool("")}
+            dragBoundFunc={dragBoundFunc}
           />
         );
       case "triangle":
@@ -189,15 +208,34 @@ const Canvas = () => {
             ref={shapeRef}
             onDragEnd={handleShapeDragEnd}
             onClick={() => setTool("")}
+            dragBoundFunc={dragBoundFunc}
           />
         );
 
       default:
         return null;
     }
-  }
+  };
 
+  const dragBoundFunc = (pos) => {
+    const stage = stageRef.current.getStage();
+    const shape = shapeRef.current;
+    const shapeSize = {
+      width: shape.width(),
+      height: shape.height(),
+    };
+    const minX = shapeSize.width / 2;
+    const maxX = stage.width() - shapeSize.width / 2;
+    const minY = shapeSize.height / 2;
+    const maxY = stage.height() - shapeSize.height / 2;
+    const x = Math.max(minX, Math.min(pos.x, maxX));
+    const y = Math.max(minY, Math.min(pos.y, maxY));
 
+    return {
+      x,
+      y,
+    };
+  };
 
   return (
     <div>
@@ -229,9 +267,12 @@ const Canvas = () => {
         >
           Add Rectangle
         </button>
-        <button onClick={() =>{ handleAddShape("triangle", "white")
-            setTool("")
-      }}>
+        <button
+          onClick={() => {
+            handleAddShape("triangle", "white");
+            setTool("");
+          }}
+        >
           Add Triangle
         </button>
         <button onClick={handleSolidLine}>Solid Line</button>
@@ -239,45 +280,50 @@ const Canvas = () => {
         <button onClick={handleDottedLine}>Dotted Line</button>
         <button onClick={handleUndo}>Undo</button>
         <label>Line Color</label>
-        <Select options={lineColors} onChange={(e)=>setLineColor(e.value)}/>
+        <Select options={lineColors} onChange={(e) => setLineColor(e.value)} />
       </div>
-      <Stage
-        height={window.innerHeight*10}
-        width={window.innerWidth}
-        ref={stageRef}
-        style={{
-          border: "1px solid",
-          overflowY: "scroll"
-        }}
-        onMouseDown={handleMouseDown}
-        onMousemove={handleMouseMove}
-        onMouseup={handleMouseUp}  
-      >
-        <Layer>
-          {shapes.map((line, i) => (
-           line?.style?.isLine ? <Line
-              key={i}
-              points={line.points}
-              stroke={line.style.stroke}
-              strokeWidth={line.style.strokeWidth}
-              dash={line.style.dash}
-              lineCap={line.style.lineCap}
-            /> : null
-          ))}
-          {currentLine.length > 0 && (
-            <Line
-              points={currentLine}
-              stroke={getStyle().stroke}
-              strokeWidth={getStyle().strokeWidth}
-              dash={getStyle().dash}
-              lineCap={getStyle().lineCap}
-            />
-          )}
-          {shapes.map((shape, i) => {
-           return (shape?.isShape ? renderShapes(shape,i) : null);
-          })}
-        </Layer>
-      </Stage>
+
+    
+        <Stage
+          height={window.innerHeight*10}
+          width={window.innerWidth}
+          ref={stageRef}
+          className="main_canvas"
+          onMouseDown={handleMouseDown}
+          onMousemove={handleMouseMove}
+          onMouseup={handleMouseUp}
+          style={{
+            border: "1px solid"
+          }}
+        >
+          <Layer>
+            {shapes.map((line, i) =>
+              line?.style?.isLine ? (
+                <Line
+                  key={i}
+                  points={line.points}
+                  stroke={line.style.stroke}
+                  strokeWidth={line.style.strokeWidth}
+                  dash={line.style.dash}
+                  lineCap={line.style.lineCap}
+                />
+              ) : null
+            )}
+            {currentLine.length > 0 && (
+              <Line
+                points={currentLine}
+                stroke={getStyle().stroke}
+                strokeWidth={getStyle().strokeWidth}
+                dash={getStyle().dash}
+                lineCap={getStyle().lineCap}
+              />
+            )}
+            {shapes.map((shape, i) => {
+              return shape?.isShape ? renderShapes(shape, i) : null;
+            })}
+          </Layer>
+        </Stage>
+    
       <div></div>
     </div>
   );
